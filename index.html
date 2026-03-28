@@ -534,10 +534,56 @@ function runImport() {
   const lastDay  = new Date(useYear, useMonth+1, 0).getDate();
   const monthChanged = (useMonth!==parseInt(document.getElementById('sel-month').value)||useYear!==parseInt(document.getElementById('sel-year').value));
 
+  function doFill() {
+    // This function fills the calendar - called after DOM is ready
+    const entries=Object.keys(results);
+    if(!entries.length){
+      status.className='modal-status err';
+      status.innerHTML='<strong>⚠️ Aucun horaire détecté</strong><br>' +
+        '<span style="font-size:11px;color:#aaa;font-style:normal;">Vérifiez le format : ex. « Lundi 3 : 9h00-15h30 »</span>';
+      btn.disabled=false; return;
+    }
+
+    let filled=0;
+    document.querySelectorAll('.time-input').forEach(inp => {
+      const cell=inp.closest('td'), dayNumEl=cell?cell.querySelector('.day-num'):null;
+      if(!dayNumEl) return;
+      const dayNum=parseInt(dayNumEl.textContent.trim());
+      if(results[dayNum]!==undefined){
+        inp.value=results[dayNum];
+        inp.dispatchEvent(new Event('input'));
+        filled++;
+      }
+    });
+
+    const monthLabel2=MONTH_NAMES_FR[useMonth].charAt(0).toUpperCase()+MONTH_NAMES_FR[useMonth].slice(1);
+    const monthInfo2 = monthChanged ? ' — ' + monthLabel2 + ' ' + useYear + ' détecté' : '';
+    const summary2 = Object.keys(results).sort((a,b)=>a-b).map(day => {
+      return day + ' ' + MONTH_NAMES_FR[useMonth].slice(0,3) + '. : ' + results[day];
+    }).join('  |  ');
+
+    status.className='modal-status ok';
+    status.innerHTML =
+      '<strong>✅ ' + filled + ' jour(s) prérempli(s)' + monthInfo2 + '</strong>' +
+      (summary2 ? '<br><span style="font-size:11px;color:#aaa;font-style:normal;">' + summary2 + '</span>' : '');
+    btn.disabled=false;
+    setTimeout(()=>closeImportModal(), 3500);
+  }
+
   if (monthChanged) {
     document.getElementById('sel-month').value = useMonth;
     document.getElementById('sel-year').value  = useYear;
+    // Temporarily override subscribeMonth to not overwrite imported data
+    const _origUnsubscribe = unsubscribe;
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
     generate();
+    // Wait for DOM to rebuild then fill, then re-subscribe
+    setTimeout(() => {
+      doFill();
+      scheduleSave();
+    }, 150);
+  } else {
+    doFill();
   }
 
   function toMins(s) {
