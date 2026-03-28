@@ -153,19 +153,10 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
   <span class="sync-spacer"></span>
 </div>
 
-<!-- CONTROLS -->
-<div style="display:none">
-  <select id="sel-month">
-    <option value="0">Janvier</option><option value="1">Février</option>
-    <option value="2">Mars</option><option value="3">Avril</option>
-    <option value="4">Mai</option><option value="5">Juin</option>
-    <option value="6">Juillet</option><option value="7">Août</option>
-    <option value="8">Septembre</option><option value="9">Octobre</option>
-    <option value="10">Novembre</option><option value="11">Décembre</option>
-  </select>
-  <input type="number" id="sel-year" value="2026" min="2020" max="2040">
-  <span id="saved-badge"></span>
-</div>
+<!-- STATE (hidden) -->
+<input type="hidden" id="sel-month" value="2">
+<input type="hidden" id="sel-year" value="2026">
+<span id="saved-badge" style="display:none"></span>
 
 <!-- IMPORT MODAL -->
 <div class="modal-overlay" id="import-modal">
