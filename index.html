@@ -252,17 +252,19 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
     color: #2E5E4E !important;
   }
 
-  .day-cell { padding: 3px 4px !important; min-height: 44px !important; gap: 2px !important; }
+  .day-cell { padding: 3px 4px !important; height: 100% !important; gap: 2px !important; box-sizing: border-box !important; }
+  tbody tr { height: var(--print-row-height, auto) !important; }
+  tbody td { height: var(--print-row-height, auto) !important; }
   .day-cell.empty { background: repeating-linear-gradient(45deg,transparent,transparent 3px,#f5f2ef 3px,#f5f2ef 6px) !important; }
   .day-cell.dimanche-cell { background: #F5F2EF !important; }
 
-  .day-num { font-size: 9pt !important; font-weight: 700 !important; color: #1A1A1A !important; }
+  .day-num { font-size: var(--print-font-size, 9pt) !important; font-weight: 700 !important; color: #1A1A1A !important; }
   .day-month-label { font-size: 7pt !important; color: #6B6B6B !important; }
 
   .time-input {
     border: none !important;
     background: transparent !important;
-    font-size: 9pt !important;
+    font-size: var(--print-font-size, 9pt) !important;
     color: #C8472B !important;
     font-weight: 500 !important;
     padding: 1px 0 !important;
@@ -1021,6 +1023,42 @@ generate();
   }
   // Close menu when clicking outside
   document.addEventListener('click', closeMenu);
+
+  // ── PRINT: dynamic row height to fill page ───────────────────────────────
+  function setupPrintHeights() {
+    const rows = document.querySelectorAll('tbody tr');
+    if (!rows.length) return;
+
+    // A4 landscape usable height in mm: 210 - 2*5.4 = 199.2mm
+    // Header measured from DOM (approximate fallback: 110px screen)
+    const header  = document.querySelector('.sheet-header');
+    const thead   = document.querySelector('thead');
+    const sheet   = document.querySelector('.sheet');
+
+    // At print, 1px ≈ 0.2646mm, 1mm ≈ 3.7795px
+    // A4 landscape usable height = 199.2mm = ~753px at 96dpi
+    // We work in mm for CSS:
+    const PAGE_H_MM   = 199.2; // A4 landscape - 2 * 5.4mm margins
+    const HEADER_H_MM = 29;    // approx header height at print
+    const THEAD_H_MM  = 7;     // approx thead height at print
+    const AVAILABLE   = PAGE_H_MM - HEADER_H_MM - THEAD_H_MM;
+    const rowH        = AVAILABLE / rows.length;
+
+    // Set CSS variable on :root for print
+    document.documentElement.style.setProperty('--print-row-height', rowH.toFixed(1) + 'mm');
+
+    // Also set font size based on row height
+    const fs = rowH >= 38 ? 11 : rowH >= 30 ? 10 : 9;
+    document.documentElement.style.setProperty('--print-font-size', fs + 'pt');
+  }
+
+  function cleanupPrintHeights() {
+    document.documentElement.style.removeProperty('--print-row-height');
+    document.documentElement.style.removeProperty('--print-font-size');
+  }
+
+  window.addEventListener('beforeprint', setupPrintHeights);
+  window.addEventListener('afterprint',  cleanupPrintHeights);
 
   // ── EXPOSE FUNCTIONS GLOBALLY (needed for onclick in HTML) ────────────────
   window.exportExcel      = exportExcel;
