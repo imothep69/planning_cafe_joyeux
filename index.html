@@ -571,7 +571,8 @@ function runImport() {
   const entries=Object.keys(results);
   if(!entries.length){
     status.className='modal-status err';
-    status.textContent='\u26a0\ufe0f Aucun horaire d\u00e9tect\u00e9.';
+    status.innerHTML='<strong>⚠️ Aucun horaire détecté</strong><br>' +
+      '<span style="font-size:11px;color:#aaa;font-style:normal;">Vérifiez le format : ex. « Lundi 3 : 9h00-15h30 »</span>';
     btn.disabled=false; return;
   }
 
@@ -588,10 +589,19 @@ function runImport() {
   });
 
   const monthLabel=MONTH_NAMES_FR[useMonth].charAt(0).toUpperCase()+MONTH_NAMES_FR[useMonth].slice(1);
+  const monthInfo = monthChanged ? ' \u2014 ' + monthLabel + ' ' + useYear + ' d\u00e9tect\u00e9' : '';
+
+  // Build a readable summary of what was filled
+  const summary = Object.keys(results).sort((a,b)=>a-b).map(day => {
+    return day + ' ' + MONTH_NAMES_FR[useMonth].slice(0,3) + '. : ' + results[day];
+  }).join('  |  ');
+
   status.className='modal-status ok';
-  status.textContent='\u2705 '+filled+' jour(s) rempli(s)'+(monthChanged?' ('+monthLabel+' '+useYear+' d\u00e9tect\u00e9)':'')+'!';
+  status.innerHTML =
+    '<strong>\u2705 ' + filled + ' jour(s) pr\u00e9rempli(s)' + monthInfo + '</strong>' +
+    (summary ? '<br><span style="font-size:11px;color:#aaa;font-style:normal;">' + summary + '</span>' : '');
   btn.disabled=false;
-  setTimeout(()=>closeImportModal(),2000);
+  setTimeout(()=>closeImportModal(), 3500);
 }
 
 // ── EXCEL EXPORT ──────────────────────────────────────────────────────────────
@@ -818,11 +828,13 @@ generate();
   document.addEventListener('click', closeMenu);
 
   // ── EXPOSE FUNCTIONS GLOBALLY (needed for onclick in HTML) ────────────────
-  window.exportExcel     = exportExcel;
-  window.openImportModal = openImportModal;
-  window.syncAndGenerate = syncAndGenerate;
-  window.toggleMenu      = toggleMenu;
-  window.closeMenu       = closeMenu;
+  window.exportExcel      = exportExcel;
+  window.openImportModal  = openImportModal;
+  window.closeImportModal = closeImportModal;
+  window.runImport        = runImport;
+  window.syncAndGenerate  = syncAndGenerate;
+  window.toggleMenu       = toggleMenu;
+  window.closeMenu        = closeMenu;
 
 
 
