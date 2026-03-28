@@ -599,6 +599,11 @@ function exportExcel() {
   const month=parseInt(document.getElementById('sel-month').value);
   const year=parseInt(document.getElementById('sel-year').value);
   const monthName=MONTHS_FR[month];
+
+  // Get current citation from the sync bar
+  const citationEl = document.getElementById('sync-quote');
+  const citation = citationEl ? citationEl.textContent.replace(/^[✦\s]+/,'').trim() : '';
+
   const C={
     darkBg:{argb:'FF1A1A1A'},yellow:{argb:'FFF5BE00'},white:{argb:'FFFFFFFF'},
     greenBg:{argb:'FFE4EFEC'},greenDk:{argb:'FF2E5E4E'},
@@ -606,53 +611,118 @@ function exportExcel() {
     grayBg:{argb:'FFF0EDE8'},grayTxt:{argb:'FF6B6B6B'},
     dimBg:{argb:'FFF5F2EF'},dimTxt:{argb:'FFBBBBBB'},
     rowOdd:{argb:'FFFFFFFF'},rowEven:{argb:'FFFDFCFA'},
-    border:{argb:'FFD0C8C0'},
+    border:{argb:'FFD0C8C0'},gold:{argb:'FFC49A3C'},
   };
   const thin={top:{style:'thin',color:C.border},bottom:{style:'thin',color:C.border},left:{style:'thin',color:C.border},right:{style:'thin',color:C.border}};
+
   const wb=new ExcelJS.Workbook();
   wb.creator='Café Joyeux';
+
   const numDataRows=document.querySelectorAll('tbody tr').length;
-  const USABLE=530, FIXED=127;
+  // A4 landscape usable height ~530pt
+  // Fixed: logo(70) + title(44) + month(54) + citation(28) + sep(5) + headers(28) = 229
+  const USABLE=530, FIXED=229;
   const dataRowHeight=Math.floor((USABLE-FIXED)/Math.max(numDataRows,1));
-  const fontSize=dataRowHeight>=100?18:dataRowHeight>=85?16:14;
-  const fontSizeBold=fontSize+2;
-  const fontSizeWk=fontSize+1;
+  const fontSize    = dataRowHeight>=100?18:dataRowHeight>=85?16:14;
+  const fontSizeBold= fontSize+2;
+  const fontSizeWk  = fontSize+1;
+
   const ws=wb.addWorksheet(monthName+' '+year,{
     pageSetup:{paperSize:9,orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:1,
       margins:{left:0.15,right:0.15,top:0.15,bottom:0.15,header:0,footer:0}}
   });
-  ws.columns=[{width:12},{width:22},{width:22},{width:22},{width:22},{width:22},{width:22},{width:22}];
+
+  ws.columns=[
+    {width:12},
+    {width:22},{width:22},{width:22},{width:22},{width:22},{width:22},{width:22}
+  ];
+
   function sc(cell,{bg,font,align,border}){
-    if(bg)    cell.fill={type:'pattern',pattern:'solid',fgColor:bg};
-    if(font)  cell.font=font;
-    if(align) cell.alignment=align;
-    if(border)cell.border=border;
+    if(bg)     cell.fill={type:'pattern',pattern:'solid',fgColor:bg};
+    if(font)   cell.font=font;
+    if(align)  cell.alignment=align;
+    if(border) cell.border=border;
   }
-  ws.mergeCells('A1:H1');
-  sc(ws.getCell('A1'),{bg:C.darkBg,font:{name:'Arial',bold:true,size:22,color:C.yellow},align:{horizontal:'center',vertical:'middle'}});
-  ws.getCell('A1').value='Planning Café Joyeux  ·  Baptiste Zimmer';
-  ws.getRow(1).height=54;
-  ws.mergeCells('A2:H2');
-  sc(ws.getCell('A2'),{bg:C.darkBg,font:{name:'Arial',size:17,color:C.white},align:{horizontal:'center',vertical:'middle'}});
-  ws.getCell('A2').value=monthName+' '+year;
-  ws.getRow(2).height=36;
-  ws.mergeCells('A3:H3');
+
+  // ── ROW 1: Logo zone (tall, logo sits here) ───────────────────────────────
+  ws.mergeCells('A1:A3');
+  sc(ws.getCell('A1'),{bg:C.darkBg});
+  ws.getRow(1).height=44;
+
+  // ── ROW 1-2-3 right side: Title + Month (merged vertically in B:H) ────────
+  // Title row (row 1)
+  ws.mergeCells('B1:H1');
+  sc(ws.getCell('B1'),{
+    bg:C.darkBg,
+    font:{name:'Arial',bold:true,size:18,color:C.yellow},
+    align:{horizontal:'center',vertical:'middle'}
+  });
+  ws.getCell('B1').value='Planning Café Joyeux  ·  Baptiste Zimmer';
+
+  // Month row (row 2) — very large and visible
+  ws.mergeCells('B2:H2');
+  sc(ws.getCell('B2'),{
+    bg:C.darkBg,
+    font:{name:'Arial',bold:true,size:32,color:C.white},
+    align:{horizontal:'center',vertical:'middle'}
+  });
+  ws.getCell('B2').value=monthName.toUpperCase()+' '+year;
+  ws.getRow(2).height=54;
+
+  // Citation row (row 3)
+  ws.mergeCells('B3:H3');
+  sc(ws.getCell('B3'),{
+    bg:C.darkBg,
+    font:{name:'Arial',italic:true,size:11,color:C.gold},
+    align:{horizontal:'center',vertical:'middle',wrapText:true}
+  });
+  ws.getCell('B3').value=citation || '';
+  ws.getRow(3).height=28;
+
+  // Column A rows 1-3 background fill
+  ws.getCell('A2').fill={type:'pattern',pattern:'solid',fgColor:C.darkBg};
   ws.getCell('A3').fill={type:'pattern',pattern:'solid',fgColor:C.darkBg};
-  ws.getCell('A3').border={bottom:{style:'medium',color:C.yellow}};
-  ws.getRow(3).height=5;
+
+  // ── ROW 4: Yellow separator ───────────────────────────────────────────────
+  ws.mergeCells('A4:H4');
+  ws.getCell('A4').fill={type:'pattern',pattern:'solid',fgColor:C.darkBg};
+  ws.getCell('A4').border={bottom:{style:'thick',color:C.yellow}};
+  ws.getRow(4).height=5;
+
+  // ── ROW 5: Column headers ─────────────────────────────────────────────────
   ['Semaine','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].forEach((h,i)=>{
-    const cell=ws.getCell(4,i+1);
+    const cell=ws.getCell(5,i+1);
     cell.value=h.toUpperCase();
     const isDim=i===7,isWk=i===0;
-    sc(cell,{bg:isWk?C.grayBg:(isDim?C.dimBg:C.redBg),font:{name:'Arial',bold:true,size:13,color:isWk?C.grayTxt:(isDim?C.dimTxt:C.redDk)},align:{horizontal:'center',vertical:'middle'},border:thin});
+    sc(cell,{
+      bg:isWk?C.grayBg:(isDim?C.dimBg:C.redBg),
+      font:{name:'Arial',bold:true,size:13,color:isWk?C.grayTxt:(isDim?C.dimTxt:C.redDk)},
+      align:{horizontal:'center',vertical:'middle'},
+      border:thin
+    });
   });
-  ws.getRow(4).height=32;
-  let exRow=5,isEven=false;
+  ws.getRow(5).height=28;
+
+  // ── LOGO: place over rows 1-3, column A (fixed position, no clip) ─────────
+  try {
+    const imgId=wb.addImage({base64:LOGO_B64,extension:'jpeg'});
+    // tl = top-left anchor (col 0 = A, row 0 = row1)
+    // Use pixel dimensions: ~80x80px logo in col A (~85px wide, 3 rows ~126px tall)
+    ws.addImage(imgId,{
+      tl:{col:0.05, row:0.08},
+      ext:{width:100, height:100},
+      editAs:'absolute',
+    });
+  } catch(e){ console.warn('Logo error:', e); }
+
+  // ── DATA ROWS ─────────────────────────────────────────────────────────────
+  let exRow=6, isEven=false;
   document.querySelectorAll('tbody tr').forEach(row=>{
     const wkSpan=row.querySelector('td.week-num span');
     const wkCell=ws.getCell(exRow,1);
     wkCell.value=wkSpan?'Sem.\n'+wkSpan.textContent.trim():'';
     sc(wkCell,{bg:C.greenBg,font:{name:'Arial',bold:true,size:fontSizeWk,color:C.greenDk},align:{horizontal:'center',vertical:'middle',wrapText:true},border:thin});
+
     row.querySelectorAll('td:not(.week-num)').forEach((td,di)=>{
       const inp=td.querySelector('.time-input'),dayNumEl=td.querySelector('.day-num');
       const isEmpty=!!td.querySelector('.day-cell.empty'),isDim=di===6;
@@ -675,12 +745,13 @@ function exportExcel() {
     ws.getRow(exRow).height=dataRowHeight;
     isEven=!isEven; exRow++;
   });
-  try{const imgId=wb.addImage({base64:LOGO_B64,extension:'jpeg'});ws.addImage(imgId,{tl:{col:0.05,row:0.05},br:{col:0.95,row:2.95},editAs:'oneCell'});}catch(e){}
+
+  // ── GENERATE FILE ─────────────────────────────────────────────────────────
   wb.xlsx.writeBuffer().then(buffer=>{
     const blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url;a.download='Planning_CafeJoyeux_'+monthName+'_'+year+'.xlsx';a.click();
+    a.href=url; a.download='Planning_CafeJoyeux_'+monthName+'_'+year+'.xlsx'; a.click();
     setTimeout(()=>URL.revokeObjectURL(url),3000);
   });
 }
