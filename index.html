@@ -111,28 +111,166 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
 .btn-modal-ok:disabled{opacity:.4;cursor:not-allowed;}
 
 @media print {
-  @page{size:A4 landscape;margin:8mm;}
-  body{background:white;}
-  .controls,.sync-bar{display:none!important;}
-  .sheet{max-width:100%;margin:0;box-shadow:none;border-radius:0;}
-  .sheet-header{padding:10px 16px;}
-  .logo-img{width:48px;height:48px;}
-  .header-title{font-size:18px;}
-  .header-sub,.header-month{font-size:11px;}
-  .total-badge{padding:6px 12px;}
-  .tot-num{font-size:20px;}
-  table{font-size:10px;}
-  thead th{padding:6px 4px;font-size:10px;}
-  .day-cell{min-height:52px;padding:3px 4px;gap:2px;}
-  .day-num{font-size:11px;}
-  .time-input{border:none;background:transparent;font-size:10px;padding:1px 2px;}
-  .time-input::placeholder{color:transparent!important;}
-  .calc-result{font-size:9px;}
-  td.week-num span{font-size:15px;}
-  td.week-num{font-size:9px;}
-  .sheet-footer{padding:6px 16px;}
-  .footer-note{font-size:10px;}
-  .sheet-header::after{display:none;}
+  /* ── Page setup matching Excel: A4 landscape, tight margins ── */
+  @page { size: A4 landscape; margin: 5.4mm; }
+  body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* ── Hide all UI chrome ── */
+  .sync-bar, .controls, .bottom-bar, .header-right, .sheet-footer { display: none !important; }
+  .sheet { max-width: 100%; margin: 0; box-shadow: none; border-radius: 0; overflow: visible; }
+
+  /* ── Header: dark bg, logo large, title+month centered ── */
+  .sheet-header {
+    background: #1A1A1A !important;
+    padding: 0 !important;
+    display: grid !important;
+    grid-template-columns: 110px 1fr !important;
+    grid-template-rows: auto !important;
+    min-height: 110px;
+    overflow: visible;
+    position: relative;
+  }
+  .sheet-header::after { display: none; }
+
+  /* Logo occupies the left column, full height */
+  .logo-img {
+    grid-column: 1; grid-row: 1;
+    width: 100px !important; height: 100px !important;
+    border-radius: 50% !important;
+    margin: 5px auto !important;
+    display: block !important;
+    border: 3px solid #F5BE00 !important;
+  }
+
+  /* Header text zone: right column */
+  .header-text {
+    grid-column: 2; grid-row: 1;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 6px 16px !important;
+  }
+
+  /* Title: "Planning Café Joyeux · Baptiste Zimmer" in yellow */
+  .header-title {
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    color: #F5BE00 !important;
+    letter-spacing: 0.02em !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+  }
+  .header-title span { color: #F5BE00 !important; }
+  .header-sub {
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    color: #F5BE00 !important;
+    text-align: center !important;
+  }
+  /* Hide sub on print (already in title) */
+  .header-sub { display: none !important; }
+
+  /* Month: very large white text */
+  .print-month {
+    display: block !important;
+    font-size: 28pt !important;
+    font-weight: 700 !important;
+    color: white !important;
+    text-align: center !important;
+    letter-spacing: 0.05em !important;
+    line-height: 1.1 !important;
+    margin-top: 2px !important;
+  }
+
+  /* Citation: gold italic */
+  .print-citation {
+    display: block !important;
+    font-size: 9pt !important;
+    font-style: italic !important;
+    color: #C49A3C !important;
+    text-align: center !important;
+    margin-top: 3px !important;
+    max-width: 90% !important;
+  }
+
+  /* Yellow separator under header */
+  .sheet-header::before {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: #F5BE00;
+  }
+
+  /* Hide interactive selectors */
+  .header-selectors, .header-menu { display: none !important; }
+
+  /* ── Table: match Excel column header colors ── */
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9pt; }
+
+  thead th {
+    padding: 6px 4px !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    border: 0.5pt solid #D0C8C0 !important;
+  }
+  thead th:first-child {
+    background: #F0EDE8 !important;
+    color: #6B6B6B !important;
+  }
+  thead th:not(:first-child):not(.dimanche) {
+    background: #F5E8E4 !important;
+    color: #C8472B !important;
+  }
+  thead th.dimanche {
+    background: #F5F2EF !important;
+    color: #BBBBBB !important;
+  }
+
+  /* ── Data cells ── */
+  tbody tr:nth-child(odd) td  { background: #FFFFFF !important; }
+  tbody tr:nth-child(even) td { background: #FDFCFA !important; }
+
+  td { border: 0.5pt solid #D0C8C0 !important; vertical-align: top; padding: 0 !important; }
+
+  td.week-num {
+    background: #E4EFEC !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    color: #2E5E4E !important;
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+  }
+  td.week-num span {
+    display: block !important;
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    color: #2E5E4E !important;
+  }
+
+  .day-cell { padding: 3px 4px !important; min-height: 44px !important; gap: 2px !important; }
+  .day-cell.empty { background: repeating-linear-gradient(45deg,transparent,transparent 3px,#f5f2ef 3px,#f5f2ef 6px) !important; }
+  .day-cell.dimanche-cell { background: #F5F2EF !important; }
+
+  .day-num { font-size: 9pt !important; font-weight: 700 !important; color: #1A1A1A !important; }
+  .day-month-label { font-size: 7pt !important; color: #6B6B6B !important; }
+
+  .time-input {
+    border: none !important;
+    background: transparent !important;
+    font-size: 9pt !important;
+    color: #C8472B !important;
+    font-weight: 500 !important;
+    padding: 1px 0 !important;
+    width: 100% !important;
+  }
+  .time-input::placeholder { color: transparent !important; }
+
+  .sheet-footer { display: none !important; }
 }
 
   /* Header selectors in banner */
@@ -195,6 +333,8 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
   .menu-dropdown button:hover { background: #2a2a2a; color: #F5BE00; }
 
   @media print { .header-menu { display: none; } }
+  .print-month { display: none; }
+  .print-citation { display: none; }
 </style>
 </head>
 <body>
@@ -419,6 +559,8 @@ function generate() {
     <div class="header-text">
       <div class="header-title">Planning <span>Café Joyeux</span></div>
       <div class="header-sub">Baptiste Zimmer</div>
+      <div class="print-month">${monthName.toUpperCase()} ${year}</div>
+      <div class="print-citation" id="print-citation-${month}-${year}"></div>
     </div>
     <div class="header-right">
       <div class="header-selectors">
@@ -436,9 +578,9 @@ function generate() {
       <div class="header-menu">
         <button class="menu-btn" onclick="toggleMenu(event)">☰ Menu</button>
         <div class="menu-dropdown" id="header-menu-dropdown">
-          <button onclick="window.print(); closeMenu()">🖨 Imprimer / PDF</button>
           <button onclick="exportExcel(); closeMenu()">📤 Export vers Excel</button>
           <button onclick="openImportModal(); closeMenu()">📋 Importer depuis un message</button>
+          <button onclick="window.print(); closeMenu()">🖨 Imprimer / PDF</button>
         </div>
       </div>
     </div>
@@ -485,6 +627,13 @@ function generate() {
   const _iy = document.getElementById('sel-year-inline');
   if (_im) _im.value = month;
   if (_iy) _iy.value = year;
+
+  // Populate print citation from sync bar (after DOM is ready)
+  requestAnimationFrame(() => {
+    const _pc = document.querySelector('.print-citation');
+    const _sq = document.getElementById('sync-quote');
+    if (_pc && _sq) _pc.textContent = _sq.textContent.replace(/^[✦\s]+/, '').trim();
+  });
 
   // Subscribe to Firestore realtime updates for this month
   subscribeMonth(year, month);
