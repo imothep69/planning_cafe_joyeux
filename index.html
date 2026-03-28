@@ -273,6 +273,32 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
   .time-input::placeholder { color: transparent !important; }
 
   .sheet-footer { display: none !important; }
+
+  /* ── Prevent second page ── */
+  html, body { height: 100%; overflow: hidden !important; }
+  .sheet { 
+    overflow: hidden !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+  .table-wrap { 
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  table { 
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  thead { display: table-header-group; }
+  tbody { 
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  /* Force single page */
+  .sheet-header, table, tbody { page-break-after: avoid !important; break-after: avoid !important; }
 }
 
   /* Header selectors in banner */
@@ -1038,9 +1064,9 @@ generate();
     // At print, 1px ≈ 0.2646mm, 1mm ≈ 3.7795px
     // A4 landscape usable height = 199.2mm = ~753px at 96dpi
     // We work in mm for CSS:
-    const PAGE_H_MM   = 199.2; // A4 landscape - 2 * 5.4mm margins
-    const HEADER_H_MM = 29;    // approx header height at print
-    const THEAD_H_MM  = 7;     // approx thead height at print
+    const PAGE_H_MM   = 193.0; // A4 landscape - margins - 3mm safety buffer
+    const HEADER_H_MM = 31;    // header height at print (with separator)
+    const THEAD_H_MM  = 8;     // thead height at print
     const AVAILABLE   = PAGE_H_MM - HEADER_H_MM - THEAD_H_MM;
     const rowH        = AVAILABLE / rows.length;
 
