@@ -46,10 +46,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min
 .saved-badge.show{opacity:1;}
 
 /* SHEET */
-.sheet{max-width:1100px;margin:2rem auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 40px rgba(0,0,0,.08);}
+.sheet{max-width:1100px;margin:2rem auto;background:white;border-radius:12px;overflow:visible;box-shadow:0 4px 40px rgba(0,0,0,.08);}
 
 /* HEADER */
-.sheet-header{background:var(--dark);padding:1.6rem 2.5rem;display:flex;align-items:center;gap:1.8rem;position:relative;overflow:hidden;}
+.sheet-header{background:var(--dark);padding:1.6rem 2.5rem;display:flex;align-items:center;gap:1.8rem;position:relative;overflow:visible;}
 .sheet-header::after{content:'';position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(245,190,0,.08);}
 .logo-img{flex-shrink:0;width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--yellow);}
 .header-text{flex:1;z-index:1;}
@@ -176,11 +176,11 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
   .menu-btn:hover { background: rgba(255,255,255,0.18); }
   .menu-dropdown {
     display: none;
-    position: absolute; right: 0; top: calc(100% + 8px);
-    background: #1e1e1e; border: 1px solid #333;
-    border-radius: 10px; overflow: hidden;
-    min-width: 240px; z-index: 9999;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    position: fixed;
+    background: #1e1e1e; border: 1px solid #444;
+    border-radius: 10px; overflow: visible;
+    min-width: 240px; z-index: 99999;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.7);
   }
   .menu-dropdown.open { display: block; }
   .menu-dropdown button {
@@ -694,8 +694,18 @@ generate();
   // ── MENU TOGGLE ───────────────────────────────────────────────────────────
   function toggleMenu(e) {
     e.stopPropagation();
-    const dd = document.getElementById('header-menu-dropdown');
-    if (dd) dd.classList.toggle('open');
+    const dd  = document.getElementById('header-menu-dropdown');
+    const btn = e.currentTarget;
+    if (!dd) return;
+    if (dd.classList.contains('open')) {
+      dd.classList.remove('open');
+      return;
+    }
+    // Position dropdown below the button using fixed coords
+    const rect = btn.getBoundingClientRect();
+    dd.style.top   = (rect.bottom + 8) + 'px';
+    dd.style.right = (window.innerWidth - rect.right) + 'px';
+    dd.classList.add('open');
   }
   function closeMenu() {
     const dd = document.getElementById('header-menu-dropdown');
