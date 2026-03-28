@@ -158,8 +158,8 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
 
 <!-- CONTROLS -->
 <div class="controls">
-  <input type="hidden" id="sel-month" value="">
-  <input type="hidden" id="sel-year" value="">
+  <input type="hidden" id="sel-month" value="2">
+  <input type="hidden" id="sel-year" value="2026">
   <span class="saved-badge" id="saved-badge">☁ Sauvegardé</span>
   <button class="btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
   <button class="btn-excel" onclick="exportExcel()">📊 Extraire vers Excel</button>
@@ -312,8 +312,10 @@ function syncAndGenerate(field, val) {
 }
 
 function generate() {
-  const month   = parseInt(document.getElementById('sel-month').value);
-  const year    = parseInt(document.getElementById('sel-year').value);
+  let month = parseInt(document.getElementById('sel-month').value);
+  let year  = parseInt(document.getElementById('sel-year').value);
+  if (isNaN(month)) month = new Date().getMonth();
+  if (isNaN(year))  year  = new Date().getFullYear();
   const monthName = MONTHS_FR[month];
   const lastDay = new Date(year, month+1, 0).getDate();
 
