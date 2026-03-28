@@ -39,12 +39,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--dark);min
 .controls select,.controls input[type=number]{background:#2a2a2a;border:1px solid #444;color:#fff;padding:6px 12px;border-radius:6px;font-size:14px;cursor:pointer;}
 .btn-generate{background:var(--yellow);color:#1a1a1a;border:none;padding:8px 20px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:opacity .15s;}
 .btn-generate:hover{opacity:.85;}
-.btn-print{background:transparent;color:#ccc;border:1px solid #555;padding:10px 0;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;width:220px;text-align:center;transition:all .15s;}
-.btn-print:hover{border-color:#fff;color:#fff;}
-.btn-excel{background:#1D6F42;color:white;border:none;padding:10px 0;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;width:220px;text-align:center;transition:opacity .15s;}
-.btn-excel:hover{opacity:.85;}
-.btn-import{background:#5B4FCF;color:white;border:none;padding:10px 0;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;width:220px;text-align:center;transition:opacity .15s;}
-.btn-import:hover{opacity:.85;}
+
+
+
 .saved-badge{font-size:12px;color:#4caf50;opacity:0;transition:opacity .4s;font-style:italic;}
 .saved-badge.show{opacity:1;}
 
@@ -156,19 +153,48 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
   .header-selectors input[type=number]:hover { background: #ffd020; }
 
   /* Bottom bar */
-  .bottom-bar {
-    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-    background: var(--dark); border-top: 2px solid #F5BE00;
-    padding: 0.9rem 2rem;
-    display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
+  
+
+
+
+  /* Header right zone */
+  .header-right {
+    display: flex; flex-direction: column; align-items: flex-end;
+    gap: 10px; z-index: 1; flex-shrink: 0;
   }
-  .bottom-bar.visible {
-    transform: translateY(0);
+
+  /* Menu dropdown */
+  .header-menu { position: relative; }
+  .menu-btn {
+    background: rgba(255,255,255,0.1);
+    color: #fff; border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 20px; border-radius: 8px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    letter-spacing: 0.03em;
   }
-  .sheet { margin-bottom: 6rem; } body { padding-bottom: 0; }
-  @media print { .bottom-bar { display: none !important; } }
+  .menu-btn:hover { background: rgba(255,255,255,0.18); }
+  .menu-dropdown {
+    display: none;
+    position: absolute; right: 0; top: calc(100% + 8px);
+    background: #1e1e1e; border: 1px solid #333;
+    border-radius: 10px; overflow: hidden;
+    min-width: 240px; z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .menu-dropdown.open { display: block; }
+  .menu-dropdown button {
+    display: block; width: 100%;
+    background: transparent; color: #e0e0e0;
+    border: none; border-bottom: 1px solid #2a2a2a;
+    padding: 13px 20px; text-align: left;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .menu-dropdown button:last-child { border-bottom: none; }
+  .menu-dropdown button:hover { background: #2a2a2a; color: #F5BE00; }
+
+  @media print { .header-menu { display: none; } }
 </style>
 </head>
 <body>
@@ -394,17 +420,27 @@ function generate() {
       <div class="header-title">Planning <span>Café Joyeux</span></div>
       <div class="header-sub">Baptiste Zimmer</div>
     </div>
-    <div class="header-selectors">
-      <select id="sel-month-inline" onchange="syncAndGenerate('month',this.value)">
-        <option value="0">Janvier</option><option value="1">Février</option>
-        <option value="2">Mars</option><option value="3">Avril</option>
-        <option value="4">Mai</option><option value="5">Juin</option>
-        <option value="6">Juillet</option><option value="7">Août</option>
-        <option value="8">Septembre</option><option value="9">Octobre</option>
-        <option value="10">Novembre</option><option value="11">Décembre</option>
-      </select>
-      <input type="number" id="sel-year-inline" value="${year}" min="2020" max="2040"
-        onchange="syncAndGenerate('year',this.value)">
+    <div class="header-right">
+      <div class="header-selectors">
+        <select id="sel-month-inline" onchange="syncAndGenerate('month',this.value)">
+          <option value="0">Janvier</option><option value="1">Février</option>
+          <option value="2">Mars</option><option value="3">Avril</option>
+          <option value="4">Mai</option><option value="5">Juin</option>
+          <option value="6">Juillet</option><option value="7">Août</option>
+          <option value="8">Septembre</option><option value="9">Octobre</option>
+          <option value="10">Novembre</option><option value="11">Décembre</option>
+        </select>
+        <input type="number" id="sel-year-inline" value="${year}" min="2020" max="2040"
+          onchange="syncAndGenerate('year',this.value)">
+      </div>
+      <div class="header-menu">
+        <button class="menu-btn" onclick="toggleMenu(event)">☰ Menu</button>
+        <div class="menu-dropdown" id="header-menu-dropdown">
+          <button onclick="window.print(); closeMenu()">🖨 Imprimer / PDF</button>
+          <button onclick="exportExcel(); closeMenu()">📤 Export vers Excel</button>
+          <button onclick="openImportModal(); closeMenu()">📋 Importer depuis un message</button>
+        </div>
+      </div>
     </div>
   </div>`;
 
@@ -655,36 +691,30 @@ document.getElementById('sel-month').value = now.getMonth();
 document.getElementById('sel-year').value  = now.getFullYear();
 generate();
 
+  // ── MENU TOGGLE ───────────────────────────────────────────────────────────
+  function toggleMenu(e) {
+    e.stopPropagation();
+    const dd = document.getElementById('header-menu-dropdown');
+    if (dd) dd.classList.toggle('open');
+  }
+  function closeMenu() {
+    const dd = document.getElementById('header-menu-dropdown');
+    if (dd) dd.classList.remove('open');
+  }
+  // Close menu when clicking outside
+  document.addEventListener('click', closeMenu);
+
   // ── EXPOSE FUNCTIONS GLOBALLY (needed for onclick in HTML) ────────────────
   window.exportExcel     = exportExcel;
   window.openImportModal = openImportModal;
   window.syncAndGenerate = syncAndGenerate;
+  window.toggleMenu      = toggleMenu;
+  window.closeMenu       = closeMenu;
 
-  // ── SHOW BOTTOM BAR ONLY NEAR BOTTOM OF PAGE ──────────────────────────────
-  const bottomBar = document.querySelector('.bottom-bar');
-  function checkScroll() {
-    const scrolled    = window.scrollY + window.innerHeight;
-    const pageHeight  = document.documentElement.scrollHeight;
-    // Show when within 200px of bottom OR page is short enough to show all
-    if (scrolled >= pageHeight - 200 || pageHeight <= window.innerHeight + 50) {
-      bottomBar.classList.add('visible');
-    } else {
-      bottomBar.classList.remove('visible');
-    }
-  }
-  window.addEventListener('scroll', checkScroll, { passive: true });
-  // Initial check (short pages)
-  setTimeout(checkScroll, 300);
+
 
 });
 </script>
 
-
-<!-- BOTTOM BAR -->
-<div class="bottom-bar">
-  <button class="btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
-  <button class="btn-excel" onclick="exportExcel()">📤 Export vers Excel</button>
-  <button class="btn-import" onclick="openImportModal()">📋 Importer depuis un message</button>
-</div>
 </body>
 </html>
