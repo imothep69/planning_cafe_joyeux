@@ -137,6 +137,10 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
   .footer-note{font-size:10px;}
   .sheet-header::after{display:none;}
 }
+
+  .bottom-bar { position: sticky; bottom: 0; z-index: 100; border-top: 2px solid #F5BE00; }
+  .sheet { margin-bottom: 6rem; }
+  @media print { .bottom-bar { display: none !important; } }
 </style>
 </head>
 <body>
@@ -150,8 +154,7 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
 </div>
 
 <!-- CONTROLS -->
-<div class="controls">
-  <label>Mois</label>
+<div style="display:none">
   <select id="sel-month">
     <option value="0">Janvier</option><option value="1">Février</option>
     <option value="2">Mars</option><option value="3">Avril</option>
@@ -160,12 +163,8 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
     <option value="8">Septembre</option><option value="9">Octobre</option>
     <option value="10">Novembre</option><option value="11">Décembre</option>
   </select>
-  <label>Année</label>
-  <input type="number" id="sel-year" value="2026" min="2020" max="2040" style="width:80px">
-
-  <button class="btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
-  <button class="btn-excel" onclick="exportExcel()">📊 Extraire vers Excel</button>
-  <button class="btn-import" onclick="openImportModal()">📋 Importer un planning</button>
+  <input type="number" id="sel-year" value="2026" min="2020" max="2040">
+  <span id="saved-badge"></span>
 </div>
 
 <!-- IMPORT MODAL -->
@@ -635,8 +634,9 @@ generate();
 });
 </script>
 
+
 <!-- BOTTOM BAR -->
-<div class="bottom-bar" style="background:#1A1A1A;padding:0.8rem 2rem;display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap;position:sticky;bottom:0;z-index:100;border-top:2px solid #F5BE00;">
+<div class="bottom-bar">
   <button class="btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
   <button class="btn-excel" onclick="exportExcel()">📤 Export vers Excel</button>
   <button class="btn-import" onclick="openImportModal()">📋 Importer depuis un message</button>
