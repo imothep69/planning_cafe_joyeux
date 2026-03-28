@@ -157,12 +157,17 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
 
   /* Bottom bar */
   .bottom-bar {
-    position: sticky; bottom: 0; z-index: 100;
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
     background: var(--dark); border-top: 2px solid #F5BE00;
     padding: 0.9rem 2rem;
     display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
   }
-  .sheet { margin-bottom: 6rem; }
+  .bottom-bar.visible {
+    transform: translateY(0);
+  }
+  .sheet { margin-bottom: 6rem; } body { padding-bottom: 0; }
   @media print { .bottom-bar { display: none !important; } }
 </style>
 </head>
@@ -649,6 +654,27 @@ const now = new Date();
 document.getElementById('sel-month').value = now.getMonth();
 document.getElementById('sel-year').value  = now.getFullYear();
 generate();
+
+  // ── EXPOSE FUNCTIONS GLOBALLY (needed for onclick in HTML) ────────────────
+  window.exportExcel     = exportExcel;
+  window.openImportModal = openImportModal;
+  window.syncAndGenerate = syncAndGenerate;
+
+  // ── SHOW BOTTOM BAR ONLY NEAR BOTTOM OF PAGE ──────────────────────────────
+  const bottomBar = document.querySelector('.bottom-bar');
+  function checkScroll() {
+    const scrolled    = window.scrollY + window.innerHeight;
+    const pageHeight  = document.documentElement.scrollHeight;
+    // Show when within 200px of bottom OR page is short enough to show all
+    if (scrolled >= pageHeight - 200 || pageHeight <= window.innerHeight + 50) {
+      bottomBar.classList.add('visible');
+    } else {
+      bottomBar.classList.remove('visible');
+    }
+  }
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  // Initial check (short pages)
+  setTimeout(checkScroll, 300);
 
 });
 </script>
