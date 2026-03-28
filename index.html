@@ -158,6 +158,8 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
 
 <!-- CONTROLS -->
 <div class="controls">
+  <input type="hidden" id="sel-month" value="">
+  <input type="hidden" id="sel-year" value="">
   <span class="saved-badge" id="saved-badge">☁ Sauvegardé</span>
   <button class="btn-print" onclick="window.print()">🖨 Imprimer / PDF</button>
   <button class="btn-excel" onclick="exportExcel()">📊 Extraire vers Excel</button>
@@ -300,8 +302,12 @@ function fmtHours(h) {
 
 // ── GENERATE CALENDAR ─────────────────────────────────────────────────────────
 function syncAndGenerate(field, val) {
-  if (field === 'month') document.getElementById('sel-month').value = val;
-  if (field === 'year')  document.getElementById('sel-year').value  = val;
+  if (field === 'month') {
+    document.getElementById('sel-month').value = val;
+  }
+  if (field === 'year') {
+    document.getElementById('sel-year').value = val;
+  }
   generate();
 }
 
@@ -390,9 +396,8 @@ function generate() {
   subscribeMonth(year, month);
 }
 
-// ── AUTO-GENERATE ON SELECTOR CHANGE ─────────────────────────────────────────
-document.getElementById('sel-month').addEventListener('change', generate);
-document.getElementById('sel-year').addEventListener('change', generate);
+// ── AUTO-GENERATE ON SELECTOR CHANGE (inline header selectors) ───────────────
+// Handled via onchange= attributes on sel-month-inline and sel-year-inline
 
 // ── IMPORT MODAL ──────────────────────────────────────────────────────────────
 function openImportModal() {
@@ -438,6 +443,10 @@ function runImport() {
   if (monthChanged) {
     document.getElementById('sel-month').value = useMonth;
     document.getElementById('sel-year').value  = useYear;
+    const _im2 = document.getElementById('sel-month-inline');
+    const _iy2 = document.getElementById('sel-year-inline');
+    if (_im2) _im2.value = useMonth;
+    if (_iy2) _iy2.value = useYear;
     generate();
   }
 
@@ -614,6 +623,11 @@ function exportExcel() {
 const now = new Date();
 document.getElementById('sel-month').value = now.getMonth();
 document.getElementById('sel-year').value  = now.getFullYear();
+// Also init inline selectors in the header
+const _im = document.getElementById('sel-month-inline');
+const _iy = document.getElementById('sel-year-inline');
+if (_im) _im.value = now.getMonth();
+if (_iy) _iy.value = now.getFullYear();
 generate();
 </script>
 
