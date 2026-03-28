@@ -1,4 +1,4 @@
-const CACHE = 'planning-cj-v1';
+const CACHE = 'planning-cj-v2';
 const ASSETS = [
   './',
   './index.html',
