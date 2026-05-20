@@ -398,6 +398,25 @@ td.week-num span{display:block;font-size:20px;font-family:'Playfair Display',ser
   </div>
 </div>
 
+<!-- COMBO IMPORT MODAL -->
+<div class="modal-overlay" id="combo-modal">
+  <div class="modal-box">
+    <div class="modal-title">Importer depuis <span>Combo</span></div>
+    <div class="modal-sub">
+      Depuis Combo HR, allez sur votre planning mensuel, puis :<br>
+      <strong>Clic droit → Enregistrer sous → Page Web, complète (.mhtml)</strong><br>
+      Ensuite collez ici le <strong>contenu texte</strong> du fichier .mhtml ci-dessous.
+    </div>
+    <textarea class="modal-textarea" id="combo-text"
+      placeholder="Collez ici le contenu du fichier .mhtml exporté depuis Combo HR..."></textarea>
+    <div class="modal-actions">
+      <div class="modal-status" id="combo-status"></div>
+      <button class="btn-modal-cancel" onclick="closeComboModal()">Annuler</button>
+      <button class="btn-modal-ok" id="btn-combo-ok" onclick="runComboImport()">📅 Analyser et importer</button>
+    </div>
+  </div>
+</div>
+
 <div class="sheet" id="sheet"></div>
 
 <script>
@@ -608,6 +627,7 @@ function generate() {
         <div class="menu-dropdown" id="header-menu-dropdown">
           <button onclick="exportExcel(); closeMenu()">📤 Export vers Excel</button>
           <button onclick="openImportModal(); closeMenu()">📋 Importer depuis un message</button>
+          <button onclick="openComboModal(); closeMenu()">📅 Importer depuis Combo</button>
           <button onclick="window.print(); closeMenu()">🖨 Imprimer / PDF</button>
         </div>
       </div>
@@ -1050,6 +1070,186 @@ generate();
   // Close menu when clicking outside
   document.addEventListener('click', closeMenu);
 
+  // ── COMBO HR IMPORT ────────────────────────────────────────────────────────
+
+  function openComboModal() {
+    const modal = document.getElementById('combo-modal');
+    const status = document.getElementById('combo-status');
+    const btn = document.getElementById('btn-combo-ok');
+    if (modal) modal.classList.add('open');
+    document.getElementById('combo-text').focus();
+    if (status) { status.textContent = ''; status.className = 'modal-status'; }
+    if (btn) btn.disabled = false;
+  }
+
+  function closeComboModal() {
+    const modal = document.getElementById('combo-modal');
+    if (modal) modal.classList.remove('open');
+  }
+
+  document.getElementById('combo-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeComboModal();
+  });
+
+  function parseComboMhtml(rawText) {
+    // ── Step 1: Decode Quoted-Printable encoding from .mhtml ─────────────────
+    // .mhtml files use QP encoding: soft line wraps (=\r\n) and =3D for =
+    const text = rawText
+      .replace(/=\r\n/g, '')   // remove QP soft line wraps
+      .replace(/=\n/g, '')     // also unix-style
+      .replace(/=3D/gi, '=')   // =3D → =
+      .replace(/=22/gi, '"');  // =22 → "  (just in case)
+
+    // ── Step 2: Extract month/year from Snapshot-Content-Location URL ────────
+    let month = null, year = null;
+    const urlMatch = text.match(/date=(\d{4})-(\d{2})-\d{2}/);
+    if (urlMatch) {
+      year  = parseInt(urlMatch[1]);
+      month = parseInt(urlMatch[2]) - 1; // 0-based
+    }
+
+    // ── Step 3: Find Baptiste ZIMMER section ─────────────────────────────────
+    const baptisteIdx = text.indexOf('Baptiste');
+    if (baptisteIdx === -1) return { error: 'Baptiste ZIMMER introuvable dans le fichier.' };
+
+    const chunk = text.substring(baptisteIdx, baptisteIdx + 35000);
+
+    // ── Step 4: Extract all tube sections (shifts + repos/congé) ───────────────
+    // Day formula: day = round((x - 2) / 48) + 1  (48px/day, 2px left margin)
+    const results  = {};
+    const labels   = {}; // repos/congé labels per day
+
+    // 4a. Outer tubes: repos / congé (no times, appear first in HTML)
+    const outerRe = /translate\((\d+)px,\s*0px\)(.*?)(?=translate\(\d+px|data-testid="card-click|$)/g;
+    let outerMatch;
+    while ((outerMatch = outerRe.exec(chunk)) !== null) {
+      const x       = parseInt(outerMatch[1]);
+      const content = outerMatch[2];
+      const day     = Math.round((x - 2) / 48) + 1;
+      if (day < 1 || day > 31) continue;
+      const times = content.match(/\b\d{1,2}:\d{2}\b/g);
+      if (times && times.length >= 2) continue; // skip — handled in 4b
+      const cl = content.toLowerCase();
+      if      (cl.includes('repos'))   labels[day] = 'Repos';
+      else if (cl.includes('cong'))    labels[day] = 'Congé';
+      else if (cl.includes('absence')) labels[day] = 'Absence';
+      else if (cl.includes('non renseign') || cl.includes('non_renseign'))
+                                       labels[day] = 'Non renseigné';
+    }
+
+    // 4b. Inner cards: actual shifts with times
+    const cardRe = /data-testid="card-click[^"]*"/g;
+    let cardMatch;
+    while ((cardMatch = cardRe.exec(chunk)) !== null) {
+      const context = chunk.substring(cardMatch.index, cardMatch.index + 1200);
+      const xMatch  = context.match(/translate\((\d+)px,\s*0px\)/);
+      const times   = context.match(/\b(\d{1,2}:\d{2})\b/g);
+      if (xMatch && times && times.length >= 2) {
+        const x   = parseInt(xMatch[1]);
+        const day = Math.round((x - 2) / 48) + 1;
+        if (day >= 1 && day <= 31) {
+          results[day] = times[0].replace(':', 'h') + '-' + times[1].replace(':', 'h');
+        }
+      }
+    }
+
+    return { month, year, results, labels };
+  }
+
+  function runComboImport() {
+    const text   = document.getElementById('combo-text').value.trim();
+    const btn    = document.getElementById('btn-combo-ok');
+    const status = document.getElementById('combo-status');
+    btn.disabled = true;
+    status.className = 'modal-status loading';
+    status.textContent = '⏳ Analyse du fichier Combo…';
+
+    if (!text) {
+      status.className = 'modal-status err';
+      status.textContent = '⚠️ Veuillez coller le contenu du fichier .mhtml.';
+      btn.disabled = false;
+      return;
+    }
+
+    const parsed = parseComboMhtml(text);
+
+    if (parsed.error) {
+      status.className = 'modal-status err';
+      status.innerHTML = '<strong>❌ ' + parsed.error + '</strong><br>' +
+        '<span style="font-size:11px;color:#aaa">Vérifiez que le fichier contient bien le planning de Baptiste ZIMMER.</span>';
+      btn.disabled = false;
+      return;
+    }
+
+    const { month: detMonth, year: detYear, results, labels } = parsed;
+    const MONTHS_FR_LOCAL = ['Janvier','Février','Mars','Avril','Mai','Juin',
+      'Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+    const useMonth = detMonth !== null ? detMonth : parseInt(document.getElementById('sel-month').value);
+    const useYear  = detYear  !== null ? detYear  : parseInt(document.getElementById('sel-year').value);
+    const monthChanged = (useMonth !== parseInt(document.getElementById('sel-month').value) ||
+                          useYear  !== parseInt(document.getElementById('sel-year').value));
+
+    const entries = Object.keys(results);
+    if (!entries.length) {
+      status.className = 'modal-status err';
+      status.innerHTML = '<strong>⚠️ Aucun horaire détecté</strong><br>' +
+        '<span style="font-size:11px;color:#aaa">Assurez-vous que le fichier .mhtml est complet et contient le planning de Baptiste.</span>';
+      btn.disabled = false;
+      return;
+    }
+
+    function doComboFill() {
+      let filled = 0, labelFilled = 0;
+      document.querySelectorAll('.time-input').forEach(inp => {
+        const cell     = inp.closest('td');
+        const dayNumEl = cell ? cell.querySelector('.day-num') : null;
+        if (!dayNumEl) return;
+        const dayNum = parseInt(dayNumEl.textContent.trim());
+        if (results[dayNum] !== undefined) {
+          inp.value = results[dayNum];
+          inp.dispatchEvent(new Event('input'));
+          filled++;
+        } else if (labels && labels[dayNum] !== undefined) {
+          inp.value = labels[dayNum];
+          inp.dispatchEvent(new Event('input'));
+          labelFilled++;
+        }
+      });
+
+      scheduleSave();
+
+      const monthLabel = MONTHS_FR_LOCAL[useMonth];
+      const monthInfo  = monthChanged ? ' \u2014 ' + monthLabel + ' ' + useYear + ' d\u00e9tect\u00e9' : '';
+      const totalFilled = filled + labelFilled;
+      const shiftSummary = Object.keys(results).sort((a,b)=>a-b)
+        .map(d => d + '\u00a0: ' + results[d]).join('  \u00b7  ');
+      const labelSummary = labels ? Object.keys(labels).sort((a,b)=>a-b)
+        .map(d => d + '\u00a0: ' + labels[d]).join('  \u00b7  ') : '';
+
+      status.className = 'modal-status ok';
+      status.innerHTML =
+        '<strong>\u2705 ' + totalFilled + ' jour(s) import\u00e9(s) depuis Combo' + monthInfo + '</strong>' +
+        (shiftSummary ? '<br><span style="font-size:11px;color:#aaa;">\u23f0 Horaires\u00a0: ' + shiftSummary + '</span>' : '') +
+        (labelSummary ? '<br><span style="font-size:11px;color:#888;">\ud83d\uddd2 Repos/Cong\u00e9s\u00a0: ' + labelSummary + '</span>' : '');
+      btn.disabled = false;
+      setTimeout(() => closeComboModal(), 4000);
+    }
+
+    if (monthChanged) {
+      document.getElementById('sel-month').value = useMonth;
+      document.getElementById('sel-year').value  = useYear;
+      const _im = document.getElementById('sel-month-inline');
+      const _iy = document.getElementById('sel-year-inline');
+      if (_im) _im.value = useMonth;
+      if (_iy) _iy.value = useYear;
+      generate();
+      setTimeout(() => { doComboFill(); }, 150);
+    } else {
+      doComboFill();
+    }
+  }
+
   // ── PRINT: dynamic row height to fill page ───────────────────────────────
   function setupPrintHeights() {
     const rows = document.querySelectorAll('tbody tr');
@@ -1091,6 +1291,9 @@ generate();
   window.openImportModal  = openImportModal;
   window.closeImportModal = closeImportModal;
   window.runImport        = runImport;
+  window.openComboModal   = openComboModal;
+  window.closeComboModal  = closeComboModal;
+  window.runComboImport   = runComboImport;
   window.syncAndGenerate  = syncAndGenerate;
   window.toggleMenu       = toggleMenu;
   window.closeMenu        = closeMenu;
